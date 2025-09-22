@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunar PV Module Thermal Model - Web Version</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        /* Control Panel Styles */
+        .control-panel {
+            background: rgba(30, 30, 45, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-panel h1 {
+            color: #4a9eff;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(40, 40, 60, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .section-title {
+            color: #6bb6ff;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(50, 50, 70, 0.3);
+            border-radius: 6px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            color: #b0c4de;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(20, 20, 35, 0.8);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:hover {
+            border-color: rgba(74, 158, 255, 0.6);
+            background: rgba(30, 30, 45, 0.8);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #4a9eff;
+            box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
+        }
+
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #2a2a3e 0%, #4a9eff 100%);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4a9eff;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(74, 158, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            background: #6bb6ff;
+            transform: scale(1.1);
+        }
+
+        .slider-label {
+            text-align: center;
+            margin-top: 10px;
+            color: #6bb6ff;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .parameters-container {
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(25, 25, 40, 0.3);
+            border-radius: 8px;
+        }
+
+        .parameter-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(40, 40, 60, 0.4);
+            border-radius: 4px;
+            transition: background 0.3s ease;
+        }
+
+        .parameter-group:hover {
+            background: rgba(50, 50, 70, 0.5);
+        }
+
+        .parameter-label {
+            flex: 1;
+            color: #9ca3af;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .parameter-input {
+            width: 90px;
+            padding: 6px 8px;
+            background: rgba(20, 20, 35, 0.8);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-size: 13px;
+            text-align: right;
+            transition: all 0.3s ease;
+        }
+
+        .parameter-input:focus {
+            outline: none;
+            border-color: #4a9eff;
+            background: rgba(30, 30, 45, 0.9);
+        }
+
+        .button {
+            width: 100%;
+            padding: 10px 15px;
+            margin: 5px 0;
+            background: linear-gradient(135deg, #4a9eff 0%, #3a7ecc 100%);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 158, 255, 0.4);
+            background: linear-gradient(135deg, #5aa4ff 0%, #4a8edd 100%);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        /* Plot Panel Styles */
+        .plot-panel {
+            background: rgba(30, 30, 45, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #plotDiv {
+            flex: 1;
+            min-height: 600px;
+            background: rgba(20, 20, 35, 0.5);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: relative;
+            background: linear-gradient(135deg, #1a1a2e 0%, #2a2a3e 100%);
+            margin: 50px auto;
+            padding: 30px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border-radius: 12px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            color: #4a9eff;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(74, 158, 255, 0.3);
+        }
+
+        .modal-body {
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .modal-body pre {
+            background: rgba(20, 20, 35, 0.8);
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border: 1px solid rgba(74, 158, 255, 0.2);
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        /* Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(20, 20, 35, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(74, 158, 255, 0.4);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(74, 158, 255, 0.6);
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-panel {
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="control-panel">
+            <h1>🌙 Lunar PV Thermal Model</h1>
+            
+            <div class="section">
+                <div class="section-title">Model Options</div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="tempDependent" checked>
+                    <label for="tempDependent">Temperature-dependent efficiency η(T)</label>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Plot Axes</div>
+                <div class="control-group">
+                    <label>X-axis:</label>
+                    <select id="xAxis"></select>
+                </div>
+                <div class="control-group">
+                    <label>Y-axis:</label>
+                    <select id="yAxis"></select>
+                </div>
+                <div class="control-group">
+                    <label>Slider Parameter:</label>
+                    <select id="sliderParam"></select>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="slider-container">
+                    <input type="range" class="slider" id="paramSlider" min="0" max="100" step="1">
+                    <div class="slider-label" id="sliderLabel">Loading...</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Parameters</div>
+                <div class="parameters-container" id="parametersContainer">
+                    <!-- Parameters will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <div class="section">
+                <button class="button" onclick="updatePlot()">Update Plot</button>
+                <button class="button" onclick="calculatePoint()">Calculate Current Tc</button>
+                <button class="button" onclick="runPhysicsTests()">Run Physics Tests</button>
+                <button class="button" onclick="exportData()">Export Data</button>
+            </div>
+        </div>
+
+        <div class="plot-panel">
+            <div id="plotDiv"></div>
+        </div>
+    </div>
+
+    <!-- Modal for results display -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="modal-header" id="modalHeader">Results</div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // Physical constants
+        const SIGMA = 5.670374419e-8;  // Stefan-Boltzmann constant (W m^-2 K^-4)
+        const G_SOLAR = 1361;  // Solar constant at 1 AU (W/m²)
+
+        // Parameters with ranges
+        const parameters = {
+            "Irradiance POA (W/m²)": [1361, 0, 3000],
+            "Irradiance Regolith (W/m²)": [1000, 0, 1400],
+            "Albedo ρ": [0.12, 0.05, 0.20],
+            "Absorptance Front αf": [0.75, 0.50, 1],
+            "Absorptance Back αb": [0.75, 0.50, 1],
+            "Emissivity Front εf": [0.85, 0.80, 0.95],
+            "Emissivity Back εb": [0.90, 0.80, 0.95],
+            "View Factor Refl Front Fr,f": [0.10, 0, 0.30],
+            "View Factor Refl Back Fr,b": [0.05, 0, 0.20],
+            "View Factor Ground Front Fg,f": [0.15, 0, 0.50],
+            "View Factor Ground Back Fg,b": [0.10, 0, 0.40],
+            "Efficiency η (ref)": [0.20, 0.10, 0.30],
+            "Temp Coefficient β (1/K)": [-0.0045, -0.006, -0.002],
+            "Regolith Temperature (K)": [350, 100, 400],
+            "Thermal Resistance (K·m²/W)": [1000, 10, 10000],
+            "Mount Temperature (K)": [300, 250, 350]
+        };
+
+        // Current parameter values
+        let paramValues = {};
+        for (let param in parameters) {
+            paramValues[param] = parameters[param][0];
+        }
+
+        // Temperature-dependent efficiency model
+        function efficiencyModel(Tc, eta_ref = 0.20, beta = -0.0045, T_ref = 298.15) {
+            return eta_ref * (1 + beta * (Tc - T_ref));
+        }
+
+        // Newton-Raphson solver for implicit equations
+        function newtonRaphson(func, derivative, initial, tolerance = 1e-4, maxIter = 50) {
+            let x = initial;
+            for (let i = 0; i < maxIter; i++) {
+                let fx = func(x);
+                let fpx = derivative(x);
+                if (Math.abs(fpx) < 1e-10) break;
+                
+                let x_new = x - fx / fpx;
+                if (Math.abs(x_new - x) < tolerance) {
+                    return x_new;
+                }
+                x = x_new;
+            }
+            return x;
+        }
+
+        // Compute module temperature
+        function computeTc(G_POA, G_regolith, rho, alpha_front, alpha_back,
+                          emissivity_front, emissivity_back,
+                          F_rf, F_rb, F_gf, F_gb, eta_func, T_reg,
+                          R_th = Infinity, T_mount = 300) {
+            
+            // Energy balance function
+            function energyBalance(Tc) {
+                let eta = typeof eta_func === 'function' ? eta_func(Tc) : eta_func;
+                
+                let q_cond = 0;
+                if (R_th !== Infinity && R_th > 0) {
+                    q_cond = (Tc - T_mount) / R_th;
+                }
+                
+                let solar_direct = (alpha_front - eta) * G_POA;
+                let solar_reflected = alpha_front * rho * G_regolith * F_rf +
+                                    alpha_back * rho * G_regolith * F_rb;
+                let regolith_thermal = emissivity_front * SIGMA * F_gf * Math.pow(T_reg, 4) +
+                                      emissivity_back * SIGMA * F_gb * Math.pow(T_reg, 4);
+                let module_emission = (emissivity_front + emissivity_back) * SIGMA * Math.pow(Tc, 4);
+                
+                return solar_direct + solar_reflected + regolith_thermal - module_emission - q_cond;
+            }
+            
+            // Derivative for Newton-Raphson
+            function energyBalanceDerivative(Tc) {
+                let eta = typeof eta_func === 'function' ? eta_func(Tc) : eta_func;
+                let deta_dT = 0;
+                
+                if (typeof eta_func === 'function') {
+                    // Numerical derivative of efficiency
+                    let dT = 0.01;
+                    deta_dT = (eta_func(Tc + dT) - eta_func(Tc - dT)) / (2 * dT);
+                }
+                
+                let dq_cond_dT = 0;
+                if (R_th !== Infinity && R_th > 0) {
+                    dq_cond_dT = 1 / R_th;
+                }
+                
+                let d_emission_dT = 4 * (emissivity_front + emissivity_back) * SIGMA * Math.pow(Tc, 3);
+                
+                return -deta_dT * G_POA - d_emission_dT - dq_cond_dT;
+            }
+            
+            // Initial guess
+            let eta_init = typeof eta_func === 'function' ? eta_func(300) : eta_func;
+            
+            let numerator = (alpha_front - eta_init) * G_POA +
+                           alpha_front * rho * G_regolith * F_rf +
+                           alpha_back * rho * G_regolith * F_rb +
+                           emissivity_front * SIGMA * F_gf * Math.pow(T_reg, 4) +
+                           emissivity_back * SIGMA * F_gb * Math.pow(T_reg, 4);
+            
+            let denominator = (emissivity_front + emissivity_back) * SIGMA;
+            
+            if (numerator <= 0) {
+                console.warn("Negative energy balance - check input parameters");
+                return 300; // Return default temperature
+            }
+            
+            let Tc_init = Math.pow(numerator / denominator, 0.25);
+            
+            // Solve using Newton-Raphson if temperature-dependent
+            if (typeof eta_func === 'function') {
+                return newtonRaphson(energyBalance, energyBalanceDerivative, Tc_init);
+            } else {
+                return Tc_init;
+            }
+        }
+
+        // Initialize UI
+        function initializeUI() {
+            // Populate dropdowns
+            const paramNames = Object.keys(parameters);
+            const xSelect = document.getElementById('xAxis');
+            const ySelect = document.getElementById('yAxis');
+            const sliderSelect = document.getElementById('sliderParam');
+            
+            paramNames.forEach(param => {
+                xSelect.innerHTML += `<option value="${param}">${param}</option>`;
+                ySelect.innerHTML += `<option value="${param}">${param}</option>`;
+                sliderSelect.innerHTML += `<option value="${param}">${param}</option>`;
+            });
+            
+            // Set default selections
+            xSelect.value = "Absorptance Front αf";
+            ySelect.value = "Efficiency η (ref)";
+            sliderSelect.value = "Irradiance POA (W/m²)";
+            
+            // Create parameter inputs
+            const container = document.getElementById('parametersContainer');
+            paramNames.forEach(param => {
+                const group = document.createElement('div');
+                group.className = 'parameter-group';
+                
+                const label = document.createElement('label');
+                label.className = 'parameter-label';
+                label.textContent = param.length > 25 ? param.substring(0, 22) + '...' : param;
+                label.title = param;
+                
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'parameter-input';
+                input.id = `param-${param}`;
+                input.value = paramValues[param];
+                input.step = 'any';
+                
+                input.addEventListener('change', function() {
+                    paramValues[param] = parseFloat(this.value);
+                    updateSliderIfNeeded();
+                });
+                
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        updatePlot();
+                    }
+                });
+                
+                group.appendChild(label);
+                group.appendChild(input);
+                container.appendChild(group);
+            });
+            
+            // Setup slider
+            updateSlider();
+            document.getElementById('sliderParam').addEventListener('change', updateSlider);
+            document.getElementById('paramSlider').addEventListener('input', onSliderChange);
+            
+            // Setup checkboxes
+            document.getElementById('tempDependent').addEventListener('change', updatePlot);
+            
+            // Initial plot
+            updatePlot();
+        }
+
+        function updateSlider() {
+            const param = document.getElementById('sliderParam').value;
+            const slider = document.getElementById('paramSlider');
+            const [defaultVal, min, max] = parameters[param];
+            
+            slider.min = min;
+            slider.max = max;
+            slider.value = paramValues[param];
+            
+            updateSliderLabel();
+        }
+
+        function updateSliderIfNeeded() {
+            const param = document.getElementById('sliderParam').value;
+            const slider = document.getElementById('paramSlider');
+            slider.value = paramValues[param];
+            updateSliderLabel();
+        }
+
+        function updateSliderLabel() {
+            const param = document.getElementById('sliderParam').value;
+            const value = document.getElementById('paramSlider').value;
+            document.getElementById('sliderLabel').textContent = `${param}: ${parseFloat(value).toFixed(3)}`;
+        }
+
+        function onSliderChange() {
+            const param = document.getElementById('sliderParam').value;
+            const value = parseFloat(document.getElementById('paramSlider').value);
+            
+            paramValues[param] = value;
+            document.getElementById(`param-${param}`).value = value;
+            updateSliderLabel();
+            updatePlot();
+        }
+
+        function getEfficiencyFunction() {
+            if (document.getElementById('tempDependent').checked) {
+                const eta_ref = paramValues["Efficiency η (ref)"];
+                const beta = paramValues["Temp Coefficient β (1/K)"];
+                return (T) => efficiencyModel(T, eta_ref, beta);
+            } else {
+                return paramValues["Efficiency η (ref)"];
+            }
+        }
+
+        function computeTemperature(values) {
+            let R_th = values["Thermal Resistance (K·m²/W)"];
+            if (R_th > 9000) {
+                R_th = Infinity;
+            }
+            
+            const eta_func = document.getElementById('tempDependent').checked ?
+                (T) => efficiencyModel(T, values["Efficiency η (ref)"], values["Temp Coefficient β (1/K)"]) :
+                values["Efficiency η (ref)"];
+            
+            return computeTc(
+                values["Irradiance POA (W/m²)"],
+                values["Irradiance Regolith (W/m²)"],
+                values["Albedo ρ"],
+                values["Absorptance Front αf"],
+                values["Absorptance Back αb"],
+                values["Emissivity Front εf"],
+                values["Emissivity Back εb"],
+                values["View Factor Refl Front Fr,f"],
+                values["View Factor Refl Back Fr,b"],
+                values["View Factor Ground Front Fg,f"],
+                values["View Factor Ground Back Fg,b"],
+                eta_func,
+                values["Regolith Temperature (K)"],
+                R_th,
+                values["Mount Temperature (K)"]
+            );
+        }
+
+        function updatePlot() {
+            const xParam = document.getElementById('xAxis').value;
+            const yParam = document.getElementById('yAxis').value;
+            
+            const xRange = parameters[xParam];
+            const yRange = parameters[yParam];
+            
+            const nx = 40;
+            const ny = 40;
+            
+            const xVals = [];
+            const yVals = [];
+            const zVals = [];
+            
+            for (let i = 0; i < nx; i++) {
+                xVals.push(xRange[1] + (xRange[2] - xRange[1]) * i / (nx - 1));
+            }
+            
+            for (let j = 0; j < ny; j++) {
+                yVals.push(yRange[1] + (yRange[2] - yRange[1]) * j / (ny - 1));
+            }
+            
+            for (let j = 0; j < ny; j++) {
+                const row = [];
+                for (let i = 0; i < nx; i++) {
+                    const values = {...paramValues};
+                    values[xParam] = xVals[i];
+                    values[yParam] = yVals[j];
+                    
+                    try {
+                        const temp = computeTemperature(values);
+                        row.push(temp);
+                    } catch (e) {
+                        row.push(NaN);
+                    }
+                }
+                zVals.push(row);
+            }
+            
+            const sliderParam = document.getElementById('sliderParam').value;
+            const sliderValue = paramValues[sliderParam];
+            
+            const title = `Module Temperature vs ${xParam} & ${yParam}<br>` +
+                         `${sliderParam} = ${sliderValue.toFixed(2)}` +
+                         (document.getElementById('tempDependent').checked ? ' | η(T) model active' : '');
+            
+            const data = [{
+                x: xVals,
+                y: yVals,
+                z: zVals,
+                type: 'contour',
+                colorscale: 'Viridis',
+                contours: {
+                    coloring: 'heatmap',
+                    showlabels: true,
+                    labelfont: {
+                        size: 10,
+                        color: 'white'
+                    }
+                },
+                colorbar: {
+                    title: 'Module Temperature Tc (K)',
+                    titleside: 'right'
+                }
+            }];
+            
+            const layout = {
+                title: {
+                    text: title,
+                    font: { size: 14, color: '#e0e0e0' }
+                },
+                xaxis: {
+                    title: xParam,
+                    titlefont: { size: 12, color: '#9ca3af' },
+                    tickfont: { size: 10, color: '#9ca3af' },
+                    gridcolor: 'rgba(255, 255, 255, 0.1)'
+                },
+                yaxis: {
+                    title: yParam,
+                    titlefont: { size: 12, color: '#9ca3af' },
+                    tickfont: { size: 10, color: '#9ca3af' },
+                    gridcolor: 'rgba(255, 255, 255, 0.1)'
+                },
+                paper_bgcolor: 'rgba(20, 20, 35, 0.5)',
+                plot_bgcolor: 'rgba(20, 20, 35, 0.8)',
+                margin: { t: 50, l: 60, r: 40, b: 50 }
+            };
+            
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d']
+            };
+            
+            Plotly.newPlot('plotDiv', data, layout, config);
+        }
+
+        function calculatePoint() {
+            try {
+                const values = {...paramValues};
+                const Tc = computeTemperature(values);
+                const Tc_celsius = Tc - 273.15;
+                
+                let eta_actual;
+                if (document.getElementById('tempDependent').checked) {
+                    eta_actual = efficiencyModel(
+                        Tc,
+                        values["Efficiency η (ref)"],
+                        values["Temp Coefficient β (1/K)"]
+                    );
+                } else {
+                    eta_actual = values["Efficiency η (ref)"];
+                }
+                
+                const G_POA = values["Irradiance POA (W/m²)"];
+                const G_reg = values["Irradiance Regolith (W/m²)"];
+                
+                const solar_absorbed = values["Absorptance Front αf"] * G_POA;
+                const solar_reflected = (values["Absorptance Front αf"] * values["Albedo ρ"] *
+                                        G_reg * values["View Factor Refl Front Fr,f"] +
+                                        values["Absorptance Back αb"] * values["Albedo ρ"] *
+                                        G_reg * values["View Factor Refl Back Fr,b"]);
+                
+                const T_reg = values["Regolith Temperature (K)"];
+                const regolith_thermal = (values["Emissivity Front εf"] * SIGMA *
+                                         values["View Factor Ground Front Fg,f"] * Math.pow(T_reg, 4) +
+                                         values["Emissivity Back εb"] * SIGMA *
+                                         values["View Factor Ground Back Fg,b"] * Math.pow(T_reg, 4));
+                
+                const electrical = eta_actual * G_POA;
+                const emission = (values["Emissivity Front εf"] + values["Emissivity Back εb"]) * 
+                                SIGMA * Math.pow(Tc, 4);
+                
+                let msg = `<strong>Module Temperature:</strong><br>`;
+                msg += `Tc = ${Tc.toFixed(2)} K (${Tc_celsius.toFixed(1)}°C)<br><br>`;
+                
+                msg += `<strong>Energy Balance (W/m²):</strong><br>`;
+                msg += `• Solar absorbed (direct): ${solar_absorbed.toFixed(1)}<br>`;
+                msg += `• Solar reflected (albedo): ${solar_reflected.toFixed(1)}<br>`;
+                msg += `• Regolith thermal IR: ${regolith_thermal.toFixed(1)}<br>`;
+                msg += `• Total absorbed: ${(solar_absorbed + solar_reflected + regolith_thermal).toFixed(1)}<br><br>`;
+                
+                msg += `• Electrical extraction: ${electrical.toFixed(1)}<br>`;
+                msg += `• Thermal emission: ${emission.toFixed(1)}<br>`;
+                msg += `• Total removed: ${(electrical + emission).toFixed(1)}<br><br>`;
+                
+                msg += `<strong>Efficiency:</strong><br>`;
+                msg += `• Reference η: ${values['Efficiency η (ref)'].toFixed(3)}<br>`;
+                msg += `• Actual η(Tc): ${eta_actual.toFixed(3)}<br>`;
+                msg += `• Relative loss: ${((1 - eta_actual/values['Efficiency η (ref)'])*100).toFixed(1)}%`;
+                
+                showModal("Temperature Calculation", msg);
+                
+            } catch (e) {
+                showModal("Calculation Error", `Error: ${e.message}`);
+            }
+        }
+
+        function runPhysicsTests() {
+            try {
+                const baseValues = {...paramValues};
+                let msg = "<strong>Physics Validation Tests:</strong><br><br>";
+                
+                // Test 1: Absorptance effect
+                msg += "<strong>1. Front Absorptance vs Temperature:</strong><br>";
+                for (let alpha of [0.85, 0.90, 0.95]) {
+                    const values = {...baseValues};
+                    values['Absorptance Front αf'] = alpha;
+                    const Tc = computeTemperature(values);
+                    msg += `   αf = ${alpha.toFixed(2)} → Tc = ${Tc.toFixed(1)} K<br>`;
+                }
+                msg += "   ✓ Higher absorptance increases temperature<br><br>";
+                
+                // Test 2: Efficiency effect
+                msg += "<strong>2. Efficiency vs Temperature:</strong><br>";
+                for (let eta of [0.15, 0.20, 0.25]) {
+                    const values = {...baseValues};
+                    values['Efficiency η (ref)'] = eta;
+                    const Tc = computeTemperature(values);
+                    msg += `   η = ${eta.toFixed(2)} → Tc = ${Tc.toFixed(1)} K<br>`;
+                }
+                msg += "   ✓ Higher efficiency decreases temperature<br><br>";
+                
+                // Test 3: Regolith temperature effect
+                msg += "<strong>3. Regolith Temperature Effect:</strong><br>";
+                for (let T_reg of [300, 350, 400]) {
+                    const values = {...baseValues};
+                    values['Regolith Temperature (K)'] = T_reg;
+                    const Tc = computeTemperature(values);
+                    msg += `   T_reg = ${T_reg} K → Tc = ${Tc.toFixed(1)} K<br>`;
+                }
+                msg += "   ✓ Higher regolith temperature increases module temperature<br><br>";
+                
+                // Test 4: Emissivity effect
+                msg += "<strong>4. Emissivity vs Temperature:</strong><br>";
+                for (let eps of [0.80, 0.85, 0.90]) {
+                    const values = {...baseValues};
+                    values['Emissivity Front εf'] = eps;
+                    values['Emissivity Back εb'] = eps;
+                    const Tc = computeTemperature(values);
+                    msg += `   ε = ${eps.toFixed(2)} → Tc = ${Tc.toFixed(1)} K<br>`;
+                }
+                msg += "   ✓ Higher emissivity decreases temperature<br><br>";
+                
+                // Test 5: Albedo contribution
+                msg += "<strong>5. Albedo Contribution Test:</strong><br>";
+                const values_no_albedo = {...baseValues};
+                values_no_albedo['Albedo ρ'] = 0;
+                const Tc_no_albedo = computeTemperature(values_no_albedo);
+                
+                const values_with_albedo = {...baseValues};
+                const Tc_with_albedo = computeTemperature(values_with_albedo);
+                
+                msg += `   Without albedo: Tc = ${Tc_no_albedo.toFixed(1)} K<br>`;
+                msg += `   With albedo (ρ=${baseValues['Albedo ρ'].toFixed(2)}): Tc = ${Tc_with_albedo.toFixed(1)} K<br>`;
+                msg += `   ✓ Albedo increases temperature by ${(Tc_with_albedo - Tc_no_albedo).toFixed(1)} K`;
+                
+                showModal("Physics Tests", msg);
+                
+            } catch (e) {
+                showModal("Test Error", `Error: ${e.message}`);
+            }
+        }
+
+        function exportData() {
+            try {
+                const xParam = document.getElementById('xAxis').value;
+                const yParam = document.getElementById('yAxis').value;
+                
+                const xRange = parameters[xParam];
+                const yRange = parameters[yParam];
+                
+                const nx = 20;
+                const ny = 20;
+                
+                let csv = ',';
+                
+                // Header row
+                for (let i = 0; i < nx; i++) {
+                    const x = xRange[1] + (xRange[2] - xRange[1]) * i / (nx - 1);
+                    csv += `"${xParam}=${x.toFixed(3)}",`;
+                }
+                csv = csv.slice(0, -1) + '\n';
+                
+                // Data rows
+                for (let j = 0; j < ny; j++) {
+                    const y = yRange[1] + (yRange[2] - yRange[1]) * j / (ny - 1);
+                    csv += `"${yParam}=${y.toFixed(3)}",`;
+                    
+                    for (let i = 0; i < nx; i++) {
+                        const x = xRange[1] + (xRange[2] - xRange[1]) * i / (nx - 1);
+                        const values = {...paramValues};
+                        values[xParam] = x;
+                        values[yParam] = y;
+                        
+                        try {
+                            const Tc = computeTemperature(values);
+                            csv += `${Tc.toFixed(2)},`;
+                        } catch (e) {
+                            csv += 'NaN,';
+                        }
+                    }
+                    csv = csv.slice(0, -1) + '\n';
+                }
+                
+                // Download CSV
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'lunar_pv_thermal_data.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showModal("Export Complete", "Data has been exported to lunar_pv_thermal_data.csv");
+                
+            } catch (e) {
+                showModal("Export Error", `Error: ${e.message}`);
+            }
+        }
+
+        function showModal(title, content) {
+            document.getElementById('modalHeader').textContent = title;
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('load', initializeUI);
+    </script>
+</body>
+</html>
