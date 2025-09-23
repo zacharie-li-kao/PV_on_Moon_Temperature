@@ -742,36 +742,65 @@
                     coloring: 'heatmap',
                     showlabels: true,
                     labelfont: {
-                        size: 10,
+                        size: 14,
                         color: 'white'
                     }
                 },
                 colorbar: {
-                    title: 'Module Temperature Tc (K)',
-                    titleside: 'right'
+                    title: {
+                        text: 'Module Temperature Tc (K)',
+                        font: {
+                            size: 16,
+                            color: '#ffffff'
+                        }
+                    },
+                    titleside: 'right',
+                    tickfont: {
+                        size: 14,
+                        color: '#ffffff'
+                    }
                 }
             }];
             
             const layout = {
                 title: {
                     text: title,
-                    font: { size: 14, color: '#e0e0e0' }
+                    font: { 
+                        size: 18, 
+                        color: '#ffffff' 
+                    }
                 },
                 xaxis: {
-                    title: xParam,
-                    titlefont: { size: 12, color: '#9ca3af' },
-                    tickfont: { size: 10, color: '#9ca3af' },
-                    gridcolor: 'rgba(255, 255, 255, 0.1)'
+                    title: {
+                        text: xParam,
+                        font: {
+                            size: 16,
+                            color: '#ffffff'
+                        }
+                    },
+                    tickfont: { 
+                        size: 14, 
+                        color: '#ffffff' 
+                    },
+                    gridcolor: 'rgba(255, 255, 255, 0.2)'
                 },
                 yaxis: {
-                    title: yParam,
-                    titlefont: { size: 12, color: '#9ca3af' },
-                    tickfont: { size: 10, color: '#9ca3af' },
-                    gridcolor: 'rgba(255, 255, 255, 0.1)'
+                    title: {
+                        text: yParam,
+                        font: {
+                            size: 16,
+                            color: '#ffffff'
+                        }
+                    },
+                    tickfont: { 
+                        size: 14, 
+                        color: '#ffffff' 
+                    },
+                    gridcolor: 'rgba(255, 255, 255, 0.2)'
                 },
                 paper_bgcolor: 'rgba(20, 20, 35, 0.5)',
                 plot_bgcolor: 'rgba(20, 20, 35, 0.8)',
-                margin: { t: 50, l: 60, r: 40, b: 50 }
+                margin: { t: 70, l: 80, r: 80, b: 70 }
             };
             
             const config = {
